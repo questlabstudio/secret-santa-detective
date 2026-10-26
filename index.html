@@ -206,6 +206,33 @@ h1,h2,h3{font-family:var(--serif);font-weight:600;margin:0}
 .d-foot{padding:14px 20px 20px;display:flex;justify-content:space-between;align-items:center;color:var(--ink-3);font-size:12.5px;border-top:1px dashed #E3D6BE;margin-top:10px}
 .actions{display:grid;gap:12px;margin-top:18px}
 .actions .row{display:flex;gap:12px}
+.gift-head{display:flex;justify-content:space-between;align-items:center}
+.unwrap-all{font:inherit;font-size:13px;font-weight:600;letter-spacing:.4px;text-transform:none;color:var(--cranberry);background:none;border:0;padding:8px 2px;min-height:40px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.gift{font:inherit;width:100%;display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center;text-align:left;cursor:pointer;
+  padding:12px 14px;border-radius:18px;background:linear-gradient(135deg,#F7EFE0,#FBF6EC);border:1px solid #EADBB8;color:var(--ink);transition:background .3s}
+.gift.open{cursor:default;background:linear-gradient(135deg,#FFF8EC,#FFFDF8);box-shadow:0 0 0 2px rgba(201,164,92,.35)}
+.gift-stage{position:relative;width:76px;height:76px;flex:none;display:grid;place-items:center}
+.gift-art{position:absolute;inset:0}
+.gift-art svg{width:100%;height:100%;overflow:visible}
+.gift:not(.open) .gift-art{animation:wiggle 2.6s ease-in-out infinite}
+.gift:not(.open):nth-child(2) .gift-art{animation-delay:.4s}.gift:not(.open):nth-child(3) .gift-art{animation-delay:.8s}
+@keyframes wiggle{0%,82%,100%{transform:rotate(0)}86%{transform:rotate(-7deg)}90%{transform:rotate(6deg)}94%{transform:rotate(-4deg)}}
+.gift-art .lid{transform-box:fill-box;transform-origin:50% 100%;transition:transform .45s cubic-bezier(.3,1.4,.5,1),opacity .45s}
+.gift-art .body{transform-box:fill-box;transform-origin:50% 100%;transition:transform .4s .1s,opacity .4s .1s}
+.gift.open .gift-art .lid{transform:translateY(-26px) rotate(-28deg);opacity:0}
+.gift.open .gift-art .body{transform:scale(.4);opacity:0}
+.pop{position:relative;font-size:46px;line-height:1;transform:scale(0);opacity:0}
+.gift.open .pop{animation:pop .65s .18s cubic-bezier(.2,1.7,.45,1) forwards}
+@keyframes pop{0%{transform:scale(0) translateY(14px);opacity:0}60%{transform:scale(1.28) translateY(-6px);opacity:1}100%{transform:scale(1) translateY(0);opacity:1}}
+.sparks{position:absolute;inset:0;pointer-events:none}
+.sparks i{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px;border-radius:50%;background:var(--gold);opacity:0}
+.gift.open .sparks i{animation:spark .7s .15s ease-out forwards}
+@keyframes spark{0%{opacity:1;transform:rotate(var(--a)) translateY(0) scale(1)}100%{opacity:0;transform:rotate(var(--a)) translateY(-44px) scale(.4)}}
+.clue-text{margin:0;font-size:15.5px;line-height:1.45}
+.clue-text .hint{font-family:var(--serif);font-style:italic;font-size:19px;color:var(--ink-2)}
+.clue-text.shown{animation:enter .4s var(--ease) both}
+.clue-text em{display:block;font-style:normal;color:var(--ink-3);font-size:13px;margin-top:4px}
+@media (prefers-reduced-motion: reduce){ .gift.open .pop{opacity:1;transform:none} .gift:not(.open) .gift-art{animation:none} }
 .toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 24px);transform:translate(-50%,20px);background:var(--ink);color:var(--cream);padding:12px 18px;border-radius:99px;font-size:15px;opacity:0;transition:all .3s var(--ease);z-index:20;pointer-events:none;max-width:90vw;text-align:center}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 
@@ -316,39 +343,39 @@ const emoji = (qid, v) => { const o = (BY_ID[qid].options || []).find(x => x.v =
 
 /* Gift clues: each rule scores against the answers; 'avoid' removes it when the person said no. */
 const CLUES = [
-  {need:a=>a.drink==="coffee", w:2.5, t:"A coffee tasting trio: three small bags of beans from different origins, with a handwritten tasting card.", why:"Coffee over tea"},
-  {need:a=>a.drink==="tea", w:2.5, t:"A loose-leaf tea sampler with a pretty infuser and a note: “for your coziest evenings”.", why:"Tea over coffee"},
-  {need:a=>has(a,"cooking"), w:3, t:"A spice blend set for a cuisine they love, plus one recipe you copied out by hand.", why:"Loves cooking"},
-  {need:a=>has(a,"fitness"), w:3, t:"A quality skipping rope or resistance-band set, with a card that says “first workout's on me”.", why:"Into fitness"},
-  {need:a=>has(a,"gaming"), w:3, t:"A game-night box: their favourite snacks, a small controller stand or a cozy gaming headset cushion.", why:"Gamer at heart"},
-  {need:a=>has(a,"music"), w:3, t:"A curated playlist printed as “liner notes”: ten songs, each with one line on why it made you think of them.", why:"Music lover"},
-  {need:a=>has(a,"plants"), w:3, t:"An easy-care plant in a handsome pot, labelled with its name and three care tips.", why:"Plant person", avoid:["clutter"]},
-  {need:a=>has(a,"travel"), w:3, t:"A travel kit: packing cubes or a passport wallet, plus a note naming a place they'd love.", why:"Loves to travel"},
-  {need:a=>has(a,"fashion"), w:3, t:"A soft scarf or beanie in their favourite colour, size-free and always useful.", why:"Into fashion", colour:true},
-  {need:a=>has(a,"decor"), w:3, t:"A small framed print or ceramic dish in their favourite colour palette.", why:"Loves home decor", colour:true, avoid:["clutter"]},
-  {need:a=>has(a,"reading")||a.vibe==="bookworm", w:3, t:"A paperback picked just for them, with a bookmark and a note on why you chose it.", why:"Bookworm"},
-  {need:a=>has(a,"outdoors"), w:3, t:"A pocket thermos or a pair of warm gloves for winter walks.", why:"Outdoors fan"},
-  {need:a=>has(a,"movies"), w:3, t:"A movie-night kit: gourmet popcorn seasonings and a handwritten list of five films to watch.", why:"Movie fan"},
-  {need:a=>has(a,"pets"), w:3, t:"A treat jar or toy for their pet, with the gift tag addressed to the pet.", why:"Pet lover"},
-  {need:a=>a.vibe==="cozy", w:2, t:"A cozy night-in bundle: hot chocolate, a fleece throw and a short handwritten note.", why:"Cozy homebody", avoid:["sweets"]},
-  {need:a=>a.vibe==="adventure"||a.exp==="experience", w:2.2, t:"An experience: a climbing taster session, a guided walk or a city tour voucher.", why:"Loves experiences", avoid:["giftcards"]},
-  {need:a=>a.vibe==="creative", w:2, t:"A mini art kit: brush pens or a watercolour set with a small sketchbook.", why:"Creative soul"},
-  {need:a=>a.vibe==="foodie", w:2, t:"A gourmet snack trio that matches their sweet or salty side, from a local maker.", why:"Foodie"},
-  {need:a=>a.vibe==="techie", w:2, t:"A clever little gadget: a cable organiser, a compact power bank or a phone stand.", why:"Gadget fan"},
-  {need:a=>a.exp==="experience", w:1.8, t:"Tickets or a workshop for two: pottery, cooking or a local concert.", why:"Experience over things"},
-  {need:a=>a.snack==="sweet", w:1.6, t:"Small-batch chocolate or salted caramel from a local maker.", why:"Sweet tooth", avoid:["sweets"]},
-  {need:a=>a.snack==="salty", w:1.6, t:"Artisan salty snacks: smoked almonds, truffle crisps or spiced popcorn.", why:"Salty over sweet"},
-  {need:a=>a.scent==="woody", w:1.2, t:"A cedar or pine hand cream, or a woody room spray.", why:"Woody scents"},
-  {need:a=>a.scent==="fresh", w:1.2, t:"A citrus soap and hand-cream duo for a fresh lift.", why:"Fresh scents"},
-  {need:a=>a.scent==="sweet", w:1.2, t:"A vanilla candle in a simple glass jar.", why:"Sweet scents", avoid:["candles"]},
-  {need:a=>a.scent==="spicy", w:1.2, t:"A warm spice mix for mulled drinks or baking, in a pretty jar.", why:"Warm, spicy scents"},
-  {need:a=>a.wish==="handmade", w:2.2, t:"Something you make yourself: cookies in a jar, a hand-lettered card or a knitted coaster.", why:"Loves handmade"},
-  {need:a=>a.wish==="useful", w:2.2, t:"A quality everyday item: a well-made water bottle or a neat desk organiser.", why:"Wants something useful"},
-  {need:a=>a.wish==="edible", w:2.2, t:"A homemade food gift: jam, granola or a spice blend, in a jar with a handwritten label.", why:"Loves edible gifts"},
-  {need:a=>a.wish==="surprise", w:2.2, t:"A mystery box: three tiny wrapped items, each with a clue telling them which to open next.", why:"Loves surprises"},
-  {need:a=>a.mood<=2, w:1.4, t:"A practical upgrade of something they use daily, like a better umbrella or a cosy laptop sleeve.", why:"Practical gift style"},
-  {need:a=>a.mood>=4, w:1.4, t:"Something playful: a clever puzzle, a quirky desk toy or a card game for game night.", why:"Fun gift style"},
-  {need:a=>a.size && a.size!=="skip", w:1.0, t:"A cozy knit or hoodie in size {size}, in their favourite colour.", why:"Shared their size", colour:true},
+  {e:"☕", need:a=>a.drink==="coffee", w:2.5, t:"A coffee tasting trio: three small bags of beans from different origins, with a handwritten tasting card.", why:"Coffee over tea"},
+  {e:"🍵", need:a=>a.drink==="tea", w:2.5, t:"A loose-leaf tea sampler with a pretty infuser and a note: “for your coziest evenings”.", why:"Tea over coffee"},
+  {e:"🌶️", need:a=>has(a,"cooking"), w:3, t:"A spice blend set for a cuisine they love, plus one recipe you copied out by hand.", why:"Loves cooking"},
+  {e:"🏋️", need:a=>has(a,"fitness"), w:3, t:"A quality skipping rope or resistance-band set, with a card that says “first workout's on me”.", why:"Into fitness"},
+  {e:"🎮", need:a=>has(a,"gaming"), w:3, t:"A game-night box: their favourite snacks, a small controller stand or a cozy gaming headset cushion.", why:"Gamer at heart"},
+  {e:"🎧", need:a=>has(a,"music"), w:3, t:"A curated playlist printed as “liner notes”: ten songs, each with one line on why it made you think of them.", why:"Music lover"},
+  {e:"🪴", need:a=>has(a,"plants"), w:3, t:"An easy-care plant in a handsome pot, labelled with its name and three care tips.", why:"Plant person", avoid:["clutter"]},
+  {e:"🧳", need:a=>has(a,"travel"), w:3, t:"A travel kit: packing cubes or a passport wallet, plus a note naming a place they'd love.", why:"Loves to travel"},
+  {e:"🧣", need:a=>has(a,"fashion"), w:3, t:"A soft scarf or beanie in their favourite colour, size-free and always useful.", why:"Into fashion", colour:true},
+  {e:"🖼️", need:a=>has(a,"decor"), w:3, t:"A small framed print or ceramic dish in their favourite colour palette.", why:"Loves home decor", colour:true, avoid:["clutter"]},
+  {e:"📖", need:a=>has(a,"reading")||a.vibe==="bookworm", w:3, t:"A paperback picked just for them, with a bookmark and a note on why you chose it.", why:"Bookworm"},
+  {e:"🧤", need:a=>has(a,"outdoors"), w:3, t:"A pocket thermos or a pair of warm gloves for winter walks.", why:"Outdoors fan"},
+  {e:"🍿", need:a=>has(a,"movies"), w:3, t:"A movie-night kit: gourmet popcorn seasonings and a handwritten list of five films to watch.", why:"Movie fan"},
+  {e:"🐾", need:a=>has(a,"pets"), w:3, t:"A treat jar or toy for their pet, with the gift tag addressed to the pet.", why:"Pet lover"},
+  {e:"🛋️", need:a=>a.vibe==="cozy", w:2, t:"A cozy night-in bundle: hot chocolate, a fleece throw and a short handwritten note.", why:"Cozy homebody", avoid:["sweets"]},
+  {e:"🧗", need:a=>a.vibe==="adventure"||a.exp==="experience", w:2.2, t:"An experience: a climbing taster session, a guided walk or a city tour voucher.", why:"Loves experiences", avoid:["giftcards"]},
+  {e:"🎨", need:a=>a.vibe==="creative", w:2, t:"A mini art kit: brush pens or a watercolour set with a small sketchbook.", why:"Creative soul"},
+  {e:"🧺", need:a=>a.vibe==="foodie", w:2, t:"A gourmet snack trio that matches their sweet or salty side, from a local maker.", why:"Foodie"},
+  {e:"🔌", need:a=>a.vibe==="techie", w:2, t:"A clever little gadget: a cable organiser, a compact power bank or a phone stand.", why:"Gadget fan"},
+  {e:"🎟️", need:a=>a.exp==="experience", w:1.8, t:"Tickets or a workshop for two: pottery, cooking or a local concert.", why:"Experience over things"},
+  {e:"🍫", need:a=>a.snack==="sweet", w:1.6, t:"Small-batch chocolate or salted caramel from a local maker.", why:"Sweet tooth", avoid:["sweets"]},
+  {e:"🥨", need:a=>a.snack==="salty", w:1.6, t:"Artisan salty snacks: smoked almonds, truffle crisps or spiced popcorn.", why:"Salty over sweet"},
+  {e:"🌲", need:a=>a.scent==="woody", w:1.2, t:"A cedar or pine hand cream, or a woody room spray.", why:"Woody scents"},
+  {e:"🍋", need:a=>a.scent==="fresh", w:1.2, t:"A citrus soap and hand-cream duo for a fresh lift.", why:"Fresh scents"},
+  {e:"🕯️", need:a=>a.scent==="sweet", w:1.2, t:"A vanilla candle in a simple glass jar.", why:"Sweet scents", avoid:["candles"]},
+  {e:"🫙", need:a=>a.scent==="spicy", w:1.2, t:"A warm spice mix for mulled drinks or baking, in a pretty jar.", why:"Warm, spicy scents"},
+  {e:"🍪", need:a=>a.wish==="handmade", w:2.2, t:"Something you make yourself: cookies in a jar, a hand-lettered card or a knitted coaster.", why:"Loves handmade"},
+  {e:"💧", need:a=>a.wish==="useful", w:2.2, t:"A quality everyday item: a well-made water bottle or a neat desk organiser.", why:"Wants something useful"},
+  {e:"🍯", need:a=>a.wish==="edible", w:2.2, t:"A homemade food gift: jam, granola or a spice blend, in a jar with a handwritten label.", why:"Loves edible gifts"},
+  {e:"🎁", need:a=>a.wish==="surprise", w:2.2, t:"A mystery box: three tiny wrapped items, each with a clue telling them which to open next.", why:"Loves surprises"},
+  {e:"☂️", need:a=>a.mood<=2, w:1.4, t:"A practical upgrade of something they use daily, like a better umbrella or a cosy laptop sleeve.", why:"Practical gift style"},
+  {e:"🧩", need:a=>a.mood>=4, w:1.4, t:"Something playful: a clever puzzle, a quirky desk toy or a card game for game night.", why:"Fun gift style"},
+  {e:"🧶", need:a=>a.size && a.size!=="skip", w:1.0, t:"A cozy knit or hoodie in size {size}, in their favourite colour.", why:"Shared their size", colour:true},
 ];
 const WISH_SHORT = {handmade:"Handmade", useful:"Something useful", edible:"Edible treats", surprise:"A surprise"};
 const COLOUR_NAMES = {forest:"forest green", berry:"berry red", gold:"gold", navy:"navy", blush:"blush pink", charcoal:"charcoal", cream:"cream", rainbow:"cheerful colours"};
@@ -368,15 +395,15 @@ function giftClues(a){
     const low = text.toLowerCase();
     for(const k of no){ if((AVOID_TEXT[k] || []).some(w => low.includes(w))) return; }
     if(c.colour && a.col && COLOUR_NAMES[a.col]) text += ` Think ${COLOUR_NAMES[a.col]}.`;
-    scored.push({score: c.w + (i * 0.001), text, why: c.why});
+    scored.push({score: c.w + (i * 0.001), text, why: c.why, e: c.e});
   });
   scored.sort((x, y) => y.score - x.score);
   const out = [], seen = new Set();
   for(const s of scored){ if(seen.has(s.why)) continue; seen.add(s.why); out.push(s); if(out.length === 3) break; }
   const fallback = [
-    {text:"A handwritten card listing three things you appreciate about them, tucked into any small gift.", why:"Always a winner"},
-    {text:"A beautifully wrapped treat from a local shop they've never tried.", why:"A safe, thoughtful choice"},
-    {text:"A simple desk upgrade: a good pen and a notebook in their favourite colour.", why:"Simple and useful"}];
+    {e:"💌", text:"A handwritten card listing three things you appreciate about them, tucked into any small gift.", why:"Always a winner"},
+    {e:"🎀", text:"A beautifully wrapped treat from a local shop they've never tried.", why:"A safe, thoughtful choice"},
+    {e:"🖊️", text:"A simple desk upgrade: a good pen and a notebook in their favourite colour.", why:"Simple and useful"}];
   for(const f of fallback){ if(out.length >= 3) break; out.push(f); }
   return out;
 }
@@ -696,8 +723,9 @@ function renderProfile(a, ev, shared){
         el("div", {class:"meter-ends"}, el("span", {text:"Practical"}), el("span", {text:"Just for fun"}))),
       el("div", {}, el("div", {class:"section-k", text:"Please don't"}),
         no.length ? el("div", {class:"tags"}, no.map(v => el("span", {class:"tag no", text:label("no", v)}))) : el("div", {class:"tags"}, el("span", {class:"tag", text:"😊 Anything goes"}))),
-      el("div", {}, el("div", {class:"section-k", text:"Detective's gift clues"}),
-        el("div", {class:"clues"}, clues.map((c, n) => el("div", {class:"clue"}, el("span", {class:"n", text:String(n + 1)}), el("p", {}, c.text, el("em", {text:`Clue: ${c.why}`}))))))
+      el("div", {}, el("div", {class:"section-k gift-head"}, el("span", {text:"Detective's gift clues"}),
+          el("button", {class:"unwrap-all", onclick:(e) => { e.currentTarget.closest(".d-body").querySelectorAll(".gift:not(.open)").forEach((g, k) => setTimeout(() => g.click(), k * 260)); }}, "Unwrap all")),
+        el("div", {class:"clues"}, clues.map((c, n) => giftClue(c, n))))
     ),
     el("div", {class:"d-foot"}, el("span", {text: ev && ev.n ? ev.n : "Secret Santa Detective"}), el("span", {text: eventLine(ev) || "★"}))
   );
@@ -766,6 +794,44 @@ function renderError(msg){
     el("div", {class:"actions"}, el("div", {class:"row"}, el("button", {class:"btn primary", onclick:() => { history.replaceState(null, "", "#/"); render(); }}, "Go to start"))))));
 }
 
+
+
+/* ================================================================ gift reveal */
+const WRAP = [["#9E2A3A","#C9A45C"],["#1F3A2E","#E7C984"],["#C9A45C","#9E2A3A"]];
+function giftSvg(n){
+  const [box, rib] = WRAP[n % 3];
+  return `<svg viewBox="0 0 80 80" aria-hidden="true">
+    <g class="body"><rect x="12" y="34" width="56" height="38" rx="5" fill="${box}"/><rect x="36" y="34" width="8" height="38" fill="${rib}"/></g>
+    <g class="lid"><rect x="8" y="24" width="64" height="14" rx="4" fill="${box}" style="filter:brightness(1.12)"/><rect x="36" y="24" width="8" height="14" fill="${rib}"/>
+      <path d="M40 24c-6-12-20-12-18-3 2 6 12 4 18 3zM40 24c6-12 20-12 18-3-2 6-12 4-18 3z" fill="none" stroke="${rib}" stroke-width="4" stroke-linejoin="round"/></g></svg>`;
+}
+function giftClue(c, n){
+  const holder = el("span", {class:"gift-art"}); holder.innerHTML = giftSvg(n);
+  const pop = el("span", {class:"pop", "aria-hidden":"true", text:c.e || "🎁"});
+  const sparks = el("span", {class:"sparks", "aria-hidden":"true"}, [0,1,2,3,4,5,6,7].map(k => el("i", {style:`--a:${k * 45}deg`})));
+  const text = el("p", {class:"clue-text"}, el("span", {class:"hint", text:`Gift clue ${n + 1}: tap to unwrap`}));
+  const btn = el("button", {class:"gift", "aria-expanded":"false", "aria-label":`Unwrap gift clue ${n + 1}`,
+    onclick:() => {
+      if(btn.classList.contains("open")) return;
+      btn.classList.add("open"); btn.setAttribute("aria-expanded", "true"); btn.setAttribute("aria-label", `Gift clue ${n + 1}: ${c.text}`);
+      setTimeout(() => { text.replaceChildren(document.createTextNode(c.text), el("em", {text:`Clue: ${c.why}`})); text.classList.add("shown"); }, prefersReduced() ? 0 : 380);
+      if(!prefersReduced()){ const r = holder.getBoundingClientRect(); burst(r.left + r.width / 2, r.top + r.height / 2); }
+    }}, el("span", {class:"gift-stage"}, holder, pop, sparks), text);
+  return btn;
+}
+function burst(cx, cy){
+  const c = document.createElement("canvas"); c.setAttribute("aria-hidden", "true");
+  Object.assign(c.style, {position:"fixed", inset:"0", width:"100%", height:"100%", pointerEvents:"none", zIndex:"30"});
+  document.body.append(c); const ctx = c.getContext("2d"); const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const W = c.clientWidth, H = c.clientHeight; c.width = W * dpr; c.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const cols = ["#C9A45C", "#9E2A3A", "#EADBB8", "#2F5A45", "#FFFFFF"];
+  const p = Array.from({length:34}, () => { const a = Math.random() * Math.PI * 2, v = Math.random() * 5 + 2.5;
+    return {x:cx, y:cy, vx:Math.cos(a) * v, vy:Math.sin(a) * v - 2, r:Math.random() * 5 + 2.5, c:cols[Math.floor(Math.random() * cols.length)], a:Math.random() * 6, va:(Math.random() - .5) * .4}; });
+  let t = 0;
+  (function f(){ ctx.clearRect(0, 0, W, H); t++;
+    for(const q of p){ q.vy += 0.18; q.x += q.vx; q.y += q.vy; q.vx *= .98; q.a += q.va; ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(q.a); ctx.fillStyle = q.c; ctx.globalAlpha = Math.max(0, 1 - t / 70); ctx.fillRect(-q.r / 2, -q.r / 4, q.r, q.r / 2); ctx.restore(); }
+    if(t < 70) requestAnimationFrame(f); else c.remove(); })();
+}
 
 /* ================================================================ legal footer */
 const LEGAL_URL = "https://sites.google.com/view/questlab-studio-legal";
@@ -839,11 +905,12 @@ function paintCard(x, W, H, a, ev){
   x.fillStyle = "#8C857A"; x.font = `600 20px ${SANS}`; x.fillText("DETECTIVE'S GIFT CLUES", px + 50, y); y += 22;
   const clues = giftClues(a); x.font = `400 26px ${SANS}`;
   for(let i = 0; i < clues.length; i++){
-    const lines = wrapLines(x, clues[i].text, pw - 190).slice(0, 3); const bh = 34 + lines.length * 34;
+    const lines = wrapLines(x, clues[i].text, pw - 200).slice(0, 3); const bh = 34 + lines.length * 34;
     x.fillStyle = "#F7EFE0"; rrect(x, px + 40, y, pw - 80, bh, 18); x.fill();
-    x.fillStyle = "#1F3A2E"; x.beginPath(); x.arc(px + 86, y + 42, 22, 0, Math.PI * 2); x.fill();
-    x.fillStyle = "#EADBB8"; x.font = `600 28px ${SERIF}`; x.textAlign = "center"; x.fillText(String(i + 1), px + 86, y + 52); x.textAlign = "left";
-    x.fillStyle = "#2A2724"; x.font = `400 26px ${SANS}`; lines.forEach((ln, j) => x.fillText(ln, px + 126, y + 50 + j * 34));
+    x.fillStyle = "#FFFDF8"; x.beginPath(); x.arc(px + 86, y + 44, 30, 0, Math.PI * 2); x.fill();
+    x.strokeStyle = "#EADBB8"; x.lineWidth = 3; x.stroke();
+    x.font = `34px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`; x.textAlign = "center"; x.fillStyle = "#2A2724"; x.fillText(clues[i].e || "🎁", px + 86, y + 56); x.textAlign = "left";
+    x.fillStyle = "#2A2724"; x.font = `400 26px ${SANS}`; lines.forEach((ln, j) => x.fillText(ln, px + 136, y + 50 + j * 34));
     y += bh + 14;
   }
   // footer
